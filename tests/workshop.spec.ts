@@ -1,5 +1,7 @@
 import { expect, test } from "@playwright/test";
 import sharp from "sharp";
+import { readFile } from "node:fs/promises";
+import { join } from "node:path";
 
 test("workshop navigation and project dialogs work without browser errors", async ({
   page,
@@ -88,8 +90,9 @@ test("modal focus is trapped and background click dismisses it", async ({
   await expect(dialog).not.toBeVisible();
 });
 
-test("hackathon stickers expand from the keyboard and resume is printable", async ({
+test("hackathon stickers expand and the uploaded resume downloads unchanged", async ({
   page,
+  request,
 }) => {
   await page.goto("/");
   const sticker = page.locator(".award-sticker").first();
@@ -109,10 +112,28 @@ test("hackathon stickers expand from the keyboard and resume is printable", asyn
     "Soh Hong Yu",
   );
   await expect(
-    page.getByRole("button", { name: /Print \/ save PDF/ }),
-  ).toBeVisible();
-  await page.emulateMedia({ media: "print" });
-  await expect(page.locator(".resume-actions")).not.toBeVisible();
+    page.locator('iframe[title="Soh Hong Yu\'s uploaded resume"]'),
+  ).toHaveAttribute("src", "/resume/document");
+  const downloadEvent = page.waitForEvent("download");
+  await page
+    .getByRole("link", { name: "Download resume", exact: true })
+    .click();
+  const download = await downloadEvent;
+  expect(download.suggestedFilename()).toBe("Soh-Hong-Yu-Resume.pdf");
+  expect(await download.failure()).toBeNull();
+  const original = await readFile(
+    join(process.cwd(), "app/resume/SohHongYu_Resume_caa20260917.pdf"),
+  );
+  for (const [path, disposition] of [
+    ["/resume/download", "attachment"],
+    ["/resume/document", "inline"],
+  ]) {
+    const response = await request.get(path);
+    expect(response.status()).toBe(200);
+    expect(response.headers()["content-type"]).toContain("application/pdf");
+    expect(response.headers()["content-disposition"]).toContain(disposition);
+    expect((await response.body()).equals(original)).toBe(true);
+  }
 });
 
 test("mobile layout has no horizontal overflow and supports touch navigation", async ({
@@ -291,4 +312,113 @@ test("reduced motion and mobile show the complete process without pinning", asyn
     "static",
   );
   await expect(page.locator(".sequence-steps li")).toHaveCount(4);
+});
+
+test("resume-sourced facts are shown consistently on the homepage", async ({
+  page,
+}) => {
+  await page.goto("/");
+  const experience = page.locator("#experience");
+  await expect(experience).toContainText("Apr 2023 → Jun 2024");
+  await expect(experience).toContainText("Cybersecurity Group");
+  await expect(experience).toContainText("Ministry of Education");
+  await expect(experience).toContainText("Sep 2021 → Nov 2022");
+  await expect(experience).toContainText("67%+");
+  await expect(page.locator("#about")).toContainText("3.97/4.00");
+  await expect(page.locator("#about")).toContainText(
+    "Aug 2026 → May 2030 (expected)",
+  );
+  await expect(page.locator("#pickme")).toContainText(
+    "Rezolve AI challenge winner",
+  );
+  await expect(page.locator("#pickme")).toContainText("FastAPI");
+  await expect(page.locator("#filmgram")).toContainText(
+    "code-first AI pipeline",
+  );
+  await expect(page.locator("#filmgram")).toContainText("Node.js");
+});
+
+test("project archive supports deep links, search, categories, years and reset", async ({
+  page,
+}, testInfo) => {
+  await page.goto("/");
+  await page.getByRole("link", { name: /Built for actual humans/ }).click();
+  await expect(page).toHaveURL(/\/projects#overcooked$/);
+  await expect(page.locator("#overcooked")).toBeInViewport();
+  await expect(page.locator("#overcooked")).toContainText("80+");
+  await expect(
+    page
+      .locator("#overcooked")
+      .getByRole("link", { name: "Overcooked IRL source code" }),
+  ).toHaveAttribute("href", "https://github.com/UltraRaptorYT/Overcooked");
+  const totalProjects = await page.locator(".archive-row").count();
+  expect(totalProjects).toBeGreaterThan(50);
+  await page
+    .getByRole("searchbox", { name: "Search projects" })
+    .fill("Whisper");
+  await expect(page.locator(".archive-row")).toHaveCount(1);
+  await expect(page.locator(".archive-row")).toContainText(
+    "Live WebGPU Transcription",
+  );
+  await page.getByRole("button", { name: "Clear filters" }).click();
+  await page
+    .getByRole("button", { name: "Games & events", exact: true })
+    .click();
+  await page
+    .getByRole("combobox", { name: "Filter by year" })
+    .selectOption("2026");
+  await expect(page.locator(".archive-row")).toHaveCount(5);
+  await page.getByRole("searchbox").fill("nothing matches this");
+  await expect(
+    page.getByRole("heading", { name: "Nothing in this drawer." }),
+  ).toBeVisible();
+  await page.getByRole("button", { name: "Show all projects" }).click();
+  await expect(page.locator(".archive-row")).toHaveCount(totalProjects);
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/projects");
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= window.innerWidth,
+    ),
+  ).toBe(true);
+  await page.screenshot({
+    path: testInfo.outputPath("project-archive-mobile.png"),
+  });
+});
+
+test("Beacons project links, grouped demos and undated entries are retained", async ({
+  page,
+}) => {
+  await page.goto("/projects");
+  await expect(
+    page.locator("#pickme").getByRole("link", { name: "Open PickMe project" }),
+  ).toHaveAttribute("href", "https://pickme-lifehack.vercel.app/");
+  await expect(page.locator("#pickme")).toContainText(
+    "Rezolve AI challenge winner",
+  );
+  await expect(
+    page
+      .locator("#taskgoblin")
+      .getByRole("link", { name: "TaskGoblin: Telegram bot" }),
+  ).toHaveAttribute("href", "https://t.me/taskgoblin_launch_bot");
+  await expect(
+    page
+      .locator("#unicorn-adventure")
+      .getByRole("link", { name: "A Unicorn's Adventure: Watch demo" }),
+  ).toHaveAttribute("href", "https://youtu.be/1NT2MHYKP7Q");
+  await expect(
+    page
+      .locator("#medipill")
+      .getByRole("link", { name: "MediPill: Admin console" }),
+  ).toHaveAttribute("href", "https://ultraraptoryt.github.io/SIP-Medication/");
+  await page
+    .getByRole("combobox", { name: "Filter by year" })
+    .selectOption("Undated");
+  await expect(page.locator(".archive-row")).toHaveCount(3);
+  await expect(
+    page.getByRole("heading", { name: "DR Go", exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "RUBI Chatbot", exact: true }),
+  ).toBeVisible();
 });

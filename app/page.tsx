@@ -13,19 +13,20 @@ import {
 import { ProjectDetails } from "./components/project-details";
 import { Reveal } from "./components/reveal";
 import { StudioDock } from "./components/studio-dock";
-import { awards, links, projects } from "./lib/content";
+import {
+  awards,
+  education,
+  experience,
+  links,
+  projects,
+  resume,
+} from "./lib/content";
 
 const projectArt = [
   <FilmArt key="film" />,
   <NotebookArt key="notebook" />,
   <GraphArt key="graph" />,
   <PickMeArt key="pickme" />,
-];
-const projectLabels = [
-  "On the workbench",
-  "A small experiment",
-  "Runner-up · SMU LegalTech 2026",
-  "Winner · LifeHack 2026",
 ];
 
 export default function Home() {
@@ -44,7 +45,9 @@ export default function Home() {
         <nav className="desktop-nav" aria-label="Main navigation">
           <a href="#projects">Projects</a>
           <a href="#about">About</a>
-          <Link href="/resume">Resume</Link>
+          <a href={resume.downloadUrl} download={resume.downloadName}>
+            Resume <Icon name="arrow-down" />
+          </a>
           <a href="#contact">
             Say hello <Icon name="arrow" />
           </a>
@@ -174,11 +177,14 @@ export default function Home() {
                     <div className="project-visual">
                       {projectArt[index]}
                       <span className="project-index">0{index + 1}</span>
+                      <span className="project-illustration-label">
+                        Concept illustration
+                      </span>
                     </div>
                     <div className="project-info">
                       <span className="project-label">
                         {index === 0 && <span className="status-dot" />}
-                        {projectLabels[index]}
+                        {project.displayLabel}
                       </span>
                       <div className="project-title-row">
                         <h3>{project.name}</h3>
@@ -195,17 +201,26 @@ export default function Home() {
                 </Reveal>
               ))}
             </div>
-            <a
-              className="more-projects"
-              href={`${links.github}?tab=repositories`}
-              target="_blank"
-              rel="noopener noreferrer"
+            <Link
+              className="project-archive-teaser"
+              href="/projects#overcooked"
             >
-              <span>More experiments live on GitHub.</span>
               <span>
-                Open the drawer <Icon name="arrow" />
+                <span className="eyebrow">Built for actual humans</span>
+                <strong>Overcooked IRL</strong>
+                <span>
+                  80+ participants. Six physical game stations. One shared-state
+                  platform.
+                </span>
               </span>
-            </a>
+              <Icon name="arrow" />
+            </Link>
+            <Link className="more-projects" href="/projects">
+              <span>There&apos;s more in the project drawer.</span>
+              <span>
+                Browse the archive <Icon name="arrow" />
+              </span>
+            </Link>
           </section>
 
           <BuildSequence />
@@ -225,37 +240,35 @@ export default function Home() {
                   The resume version <Icon name="arrow" />
                 </Link>
               </div>
-              <div className="experience-log">
-                <div className="experience-date">
-                  <span>2023 → 2024</span>
-                  <small>Singapore</small>
-                </div>
-                <div className="experience-content">
-                  <p className="eyebrow">Software Engineer</p>
-                  <h3>GovTech Singapore</h3>
-                  <p>Built compliance tooling for government cloud systems.</p>
-                  <ul>
-                    <li>CloudSCAPE compliance dashboards</li>
-                    <li>IM8 compliance scanning across AWS + Azure</li>
-                    <li>Terraform reverse-engineering</li>
-                  </ul>
-                  <div className="tech-tags">
-                    {[
-                      "React",
-                      "Kibana",
-                      "Elasticsearch",
-                      "AWS",
-                      "Azure",
-                      "Terraform",
-                    ].map((tech) => (
-                      <span key={tech}>{tech}</span>
-                    ))}
+              {experience.map((entry) => (
+                <div className="experience-log" key={entry.company}>
+                  <div className="experience-date">
+                    <span>{entry.dates}</span>
+                    <small>Singapore</small>
                   </div>
+                  <div className="experience-content">
+                    <p className="eyebrow">
+                      {entry.role}
+                      {entry.team && ` · ${entry.team}`}
+                    </p>
+                    <h3>{entry.company}</h3>
+                    <p>{entry.summary}</p>
+                    <ul>
+                      {entry.points.map((point) => (
+                        <li key={point}>{point}</li>
+                      ))}
+                    </ul>
+                    <div className="tech-tags">
+                      {entry.tech.map((tech) => (
+                        <span key={tech}>{tech}</span>
+                      ))}
+                    </div>
+                  </div>
+                  <span className="experience-symbol" aria-hidden="true">
+                    <Icon name="terminal" />
+                  </span>
                 </div>
-                <span className="experience-symbol" aria-hidden="true">
-                  <Icon name="terminal" />
-                </span>
-              </div>
+              ))}
             </section>
           </Reveal>
 
@@ -339,6 +352,18 @@ export default function Home() {
                     <small>Singapore · NUS Computer Science</small>
                   </div>
                 </div>
+                <div className="education-list">
+                  {education.map((entry) => (
+                    <div key={entry.school}>
+                      <h3>{entry.school}</h3>
+                      <p>{entry.qualification}</p>
+                      <span>{entry.dates}</span>
+                      {entry.details.map((detail) => (
+                        <small key={detail}>{detail}</small>
+                      ))}
+                    </div>
+                  ))}
+                </div>
               </div>
               <div className="about-copy">
                 <p>
@@ -353,8 +378,10 @@ export default function Home() {
                   </span>
                 </p>
                 <div className="about-facts">
-                  <span>Applied AI &amp; Analytics diploma</span>
-                  <span>Previously GovTech</span>
+                  <span>
+                    President, SP School of Computing Club (2022–2023)
+                  </span>
+                  <span>Previously GovTech + MOE</span>
                   <span>Volunteer since 13</span>
                   <span>Occasional tank technician</span>
                   <span>Chronic hackathon participant</span>

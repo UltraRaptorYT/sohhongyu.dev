@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Icon } from "./icons";
+import { resume } from "../lib/content";
 
 export function StudioDock() {
   const [visible, setVisible] = useState(false);
@@ -31,7 +32,7 @@ export function StudioDock() {
         <Icon name="code" />
         <span>About</span>
       </a>
-      <a href="/resume">
+      <a href={resume.downloadUrl} download={resume.downloadName}>
         <Icon name="file" />
         <span>Resume</span>
       </a>

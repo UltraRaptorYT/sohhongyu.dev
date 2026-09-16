@@ -20,6 +20,12 @@ const commands: Command[] = [
     href: "#experience",
   },
   {
+    label: "Project archive",
+    hint: "More builds, experiments, and event projects",
+    icon: "folder",
+    href: "/projects",
+  },
+  {
     label: "About",
     hint: "The person behind the keyboard",
     icon: "code",
@@ -34,7 +40,7 @@ const commands: Command[] = [
   },
   {
     label: "Resume",
-    hint: "The printable version",
+    hint: "Read or download the original PDF",
     icon: "file",
     href: "/resume",
   },

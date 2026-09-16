@@ -24,15 +24,16 @@ bunx playwright install chromium
 bun run test:e2e
 ```
 
-The checks cover command-palette keyboard navigation, modal focus management, project dialogs, hackathon stickers, mobile overflow, reduced motion, no-JavaScript content, resume printing, and social metadata. `bun run format` formats source files.
+The checks cover command-palette keyboard navigation, modal focus management, project dialogs, hackathon stickers, mobile overflow, reduced motion, no-JavaScript content, byte-identical PDF downloads, resume-sourced facts, archive filtering, and social metadata. `bun run format` formats source files.
 
 ## V1
 
 - Light, studio-style landing page with a compact Now board
 - Four featured projects with original UI illustrations and detail dialogs
-- GovTech experience, expandable hackathon stickers, About, and contact links
+- Resume-sourced GovTech and MOE experience, education, expandable hackathon stickers, About, and contact links
 - Searchable command palette: `Cmd+K` / `Ctrl+K`, arrow keys, Enter, Escape
-- Printable resume at `/resume`, including Save as PDF through the print dialog
+- Original uploaded PDF: preview at `/resume`, inline document at `/resume/document`, download at `/resume/download`
+- Searchable project archive at `/projects`, with category and year filters
 - Responsive vertical mobile layout, native modal focus management, and reduced-motion support
 - Open Graph image, metadata, sitemap, and robots.txt
 - Transparent UltraRaptor avatar in the wordmark, hero, About, and social preview
@@ -45,9 +46,13 @@ Project illustrations are concept treatments, not recordings of the apps. The si
 
 ## Update content
 
-- `app/lib/content.ts`: projects, verified external links, awards, and contact details
-- `app/page.tsx`: Now board, experience, About, and homepage copy
-- `app/resume/page.tsx`: printable resume
+- `app/lib/content.ts`: featured projects, experience, education, awards, resume configuration, and contact details
+- `app/lib/project-archive.ts`: curated archive entries
+- `app/lib/beacons-projects.ts`: project and resource links transcribed from the supplied Beacons HTML
+- `docs/content-sources.md`: sources, verification scope, and remaining gaps
+- `app/page.tsx`: Now board, About, and homepage copy
+- `app/resume/page.tsx`: preview and download controls for the original PDF
+- `app/resume/SohHongYu_Resume_caa20260917.pdf`: the uploaded source document
 - `app/components/project-art.tsx`: lightweight HTML/SVG project illustrations
 - `app/components/build-sequence.tsx`, `app/components/hero-scene.tsx`: scroll interactions
 - `app/workshop-motion.css`: scroll-scene styles and reduced-motion fallbacks
@@ -55,7 +60,11 @@ Project illustrations are concept treatments, not recordings of the apps. The si
 - `app/globals.css`: visual system and responsive layouts
 - `app/layout.tsx`, `app/opengraph-image.tsx`: SEO and social preview
 
-FilmGram and Enchanted Notebook link to their public repositories. Enchanted Notebook also links to its live demo. L.A.R.P. and PickMe provide project details and an email CTA until public project URLs are available.
+FilmGram and Enchanted Notebook link to their public repositories. Enchanted Notebook and PickMe also link to their project sites. L.A.R.P. provides project details and an email CTA until a public project URL is available.
+
+To replace the resume, add the new PDF under `app/resume/`, update `resume.sourceFile` and `resume.updated` in `app/lib/content.ts`, and rebuild. The PDF routes are generated at build time from the original bytes. Keep the PDF in the repository so deployments can include it.
+
+The archive combines resume/GitHub sources with the visible project links in the Beacons HTML supplied by Hong Yu. Related app, admin-console and video links are grouped under one project; community, social and general video resources appear under “Beyond the code.” Unknown years use “Undated” and undocumented stacks are omitted. See the source notes for the PickMe award wording confirmed by Hong Yu.
 
 ## Avatar and icons
 
